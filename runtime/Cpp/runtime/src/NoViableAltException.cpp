@@ -16,13 +16,16 @@ NoViableAltException::NoViableAltException(Parser *recognizer)
 
 NoViableAltException::NoViableAltException(Parser *recognizer, TokenStream *input,Token *startToken,
   Token *offendingToken, atn::ATNConfigSet *deadEndConfigs, ParserRuleContext *ctx, bool deleteConfigs)
-  : RecognitionException("No viable alternative", recognizer, input, ctx, offendingToken),
-    _deadEndConfigs(deadEndConfigs), _startToken(startToken), _deleteConfigs(deleteConfigs) {
+  : RecognitionException("No viable alternative", recognizer, input, ctx, offendingToken), _startToken(startToken) {
+  if (deadEndConfigs) {
+    if(deleteConfigs)
+      _deadEndConfigs = std::shared_ptr<atn::ATNConfigSet>(deadEndConfigs);
+    else
+      _deadEndConfigs = std::shared_ptr<atn::ATNConfigSet>(deadEndConfigs, [](atn::ATNConfigSet*){});
+  }
 }
 
 NoViableAltException::~NoViableAltException() {
-  if (_deleteConfigs)
-    delete _deadEndConfigs;
 }
 
 Token* NoViableAltException::getStartToken() const {
@@ -30,5 +33,5 @@ Token* NoViableAltException::getStartToken() const {
 }
 
 atn::ATNConfigSet* NoViableAltException::getDeadEndConfigs() const {
-  return _deadEndConfigs;
+  return _deadEndConfigs.get();
 }
